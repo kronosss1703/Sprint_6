@@ -1,9 +1,9 @@
+import allure
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
+from pages.base_page import BasePage
 
-class OrderPage:
+class OrderPage(BasePage):
+    
     NAME_FIELD = (By.XPATH, "//input[@placeholder='* Имя']")
     LASTNAME_FIELD = (By.XPATH, "//input[@placeholder='* Фамилия']")
     ADDRESS_FIELD = (By.XPATH, "//input[@placeholder='* Адрес: куда привезти заказ']")
@@ -20,56 +20,40 @@ class OrderPage:
     CONFIRM_BUTTON = (By.XPATH, "//button[text()='Заказать']")
     SUCCESS_MESSAGE = (By.XPATH, "//div[contains(@class, 'Order_ModalHeader__3FDaJ')]")
     
-    def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
-    
+    @allure.step("Заполнить первую форму заказа")
     def fill_first_form(self, name, lastname, address, metro, phone):
-        self.wait.until(EC.element_to_be_clickable(self.NAME_FIELD)).send_keys(name)
-        self.driver.find_element(*self.LASTNAME_FIELD).send_keys(lastname)
-        self.driver.find_element(*self.ADDRESS_FIELD).send_keys(address)
+        self.input_text(self.NAME_FIELD, name)
+        self.input_text(self.LASTNAME_FIELD, lastname)
+        self.input_text(self.ADDRESS_FIELD, address)
         
-        metro_field = self.driver.find_element(*self.METRO_STATION)
-        metro_field.click()
-        metro_field.send_keys(metro)
-        time.sleep(0.5)
-        self.wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[text()='{metro}']"))).click()
+        self.click(self.METRO_STATION)
+        self.input_text(self.METRO_STATION, metro)
+        self.wait.until(EC.visibility_of_element_located((By.XPATH, f"//div[text()='{metro}']"))).click()
         
-        self.driver.find_element(*self.PHONE_FIELD).send_keys(phone)
-        
-        next_btn = self.driver.find_element(*self.NEXT_BUTTON)
-        self.driver.execute_script("arguments[0].scrollIntoView();", next_btn)
-        time.sleep(0.5)
-        next_btn.click()
+        self.input_text(self.PHONE_FIELD, phone)
+        self.click(self.NEXT_BUTTON)
     
+    @allure.step("Заполнить вторую форму заказа")
     def fill_second_form(self, date, rental_period, color, comment):
-        date_field = self.wait.until(EC.element_to_be_clickable(self.DATE_FIELD))
-        date_field.click()
-        date_field.clear()
-        date_field.send_keys(date)
+        self.click(self.DATE_FIELD)
+        self.input_text(self.DATE_FIELD, date)
         self.driver.find_element(By.TAG_NAME, "body").click()
-        time.sleep(0.5)
         
-        self.wait.until(EC.element_to_be_clickable(self.RENTAL_PERIOD)).click()
-        self.wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[text()='{rental_period}']"))).click()
+        self.click(self.RENTAL_PERIOD)
+        self.wait.until(EC.visibility_of_element_located((By.XPATH, f"//div[text()='{rental_period}']"))).click()
         
         if color == "black":
-            self.driver.find_element(*self.COLOR_BLACK).click()
+            self.click(self.COLOR_BLACK)
         elif color == "grey":
-            self.driver.find_element(*self.COLOR_GREY).click()
+            self.click(self.COLOR_GREY)
         
-        self.driver.find_element(*self.COMMENT_FIELD).send_keys(comment)
-        
-        time.sleep(1)
-        order_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'Button_Button__ra12g') and contains(text(), 'Заказать')]")))
-        self.driver.execute_script("arguments[0].scrollIntoView(true);", order_btn)
-        time.sleep(0.5)
-        self.driver.execute_script("arguments[0].click();", order_btn)
+        self.input_text(self.COMMENT_FIELD, comment)
+        self.click_js(self.ORDER_BUTTON)
     
+    @allure.step("Подтвердить заказ")
     def confirm_order(self):
-        time.sleep(1)
-        confirm_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Заказать']")))
-        confirm_btn.click()
-        
+        self.click_js(self.CONFIRM_BUTTON)
+    
+    @allure.step("Получить сообщение об успешном заказе")
     def get_success_message(self):
-        return self.wait.until(EC.visibility_of_element_located(self.SUCCESS_MESSAGE)).text
+        return self.find_element(self.SUCCESS_MESSAGE).text 

@@ -1,12 +1,7 @@
 import allure
 import pytest
-import time
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from pages.main_page import MainPage
 from pages.order_page import OrderPage
-
 
 @allure.feature("Тесты главной страницы")
 class TestMainPage:
@@ -25,7 +20,7 @@ class TestMainPage:
     ])
     def test_question_answer(self, driver, question_num, answer_num, expected_text):
         main_page = MainPage(driver)
-        main_page.open()
+        main_page.open_main_page()
         main_page.accept_cookies()
         
         main_page.click_question(question_num)
@@ -37,26 +32,25 @@ class TestMainPage:
     @allure.title("Переход на главную страницу Самоката по клику на логотип")
     def test_scooter_logo_redirect(self, driver):
         main_page = MainPage(driver)
-        main_page.open()
+        main_page.open_main_page()
         main_page.accept_cookies()
         
         main_page.click_scooter_logo()
         
-        assert driver.current_url == "https://qa-scooter.praktikum-services.ru/"
+        assert main_page.get_current_url() == main_page.get_main_page_url()
     
     @allure.story("Логотипы")
     @allure.title("Переход на Дзен по клику на логотип Яндекса")
     def test_yandex_logo_redirect(self, driver):
         main_page = MainPage(driver)
-        main_page.open()
+        main_page.open_main_page()
         main_page.accept_cookies()
         
         main_page.click_yandex_logo()
+        main_page.switch_to_window(1)
         
-        time.sleep(2)
-        driver.switch_to.window(driver.window_handles[1])
-        
-        assert "dzen.ru" in driver.current_url or "yandex" in driver.current_url
+        current_url = main_page.get_current_url()
+        assert "dzen.ru" in current_url or "yandex" in current_url
 
 
 @allure.feature("Тесты заказа самоката")
@@ -69,11 +63,9 @@ class TestOrderFlow:
         ("Анна", "Сидорова", "пр. Мира 10", "Парк культуры", "89997654321", "26.12.2025", "трое суток", "grey", "Домофон 123")
     ])
     def test_order_from_top_button(self, driver, name, lastname, address, metro, phone, date, rental_period, color, comment):
-        wait = WebDriverWait(driver, 15)
         main_page = MainPage(driver)
-        main_page.open()
+        main_page.open_main_page()
         main_page.accept_cookies()
-        
         main_page.click_order_top()
         
         order_page = OrderPage(driver)
@@ -91,15 +83,10 @@ class TestOrderFlow:
         ("Елена", "Козлова", "пер. Лесной 7", "Воробьёвы горы", "89995556677", "28.12.2025", "четверо суток", "grey", "Код домофона 42")
     ])
     def test_order_from_bottom_button(self, driver, name, lastname, address, metro, phone, date, rental_period, color, comment):
-        wait = WebDriverWait(driver, 15)
         main_page = MainPage(driver)
-        main_page.open()
+        main_page.open_main_page()
         main_page.accept_cookies()
-        
-        bottom_btn = driver.find_element(By.XPATH, "//button[contains(@class, 'Button_Button__ra12g') and contains(@class, 'Button_UltraBig__UU3bP')]")
-        driver.execute_script("arguments[0].scrollIntoView(true);", bottom_btn)
-        time.sleep(1)
-        driver.execute_script("arguments[0].click();", bottom_btn)
+        main_page.click_order_bottom()
         
         order_page = OrderPage(driver)
         order_page.fill_first_form(name, lastname, address, metro, phone)
